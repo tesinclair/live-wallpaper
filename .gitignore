@@ -1,0 +1,14 @@
+
+# Build Relics
+*.o
+*.so
+obj/
+bin/
+Makefile
+*.make
+
+# logical tests
+tmp/
+
+# any testing mp4s I use
+*.mp4
