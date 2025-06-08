@@ -5,12 +5,16 @@ Reader::Reader(char* filename) :
             isEOF(false), readError{.err = false, .errMsg = ""}{
 
     this->filepath = std::filesystem::current_path() / filename;
-
+    
     infile = std::ifstream(this->filepath, std::ios::binary); 
 
     if (!infile.is_open()){
-        readError.err = true;
-        readError.errMsg = "file could not be opened";
+        // if the full file path doesn't work, user might have provided the exact path
+        infile = std::ifstream(filename, std::ios::binary);
+        if (!infile.is_open()){ // if neither works then the file path has to be wrong
+            readError.err = true;
+            readError.errMsg = "file could not be opened";
+        }
     }
 }
 
