@@ -5,7 +5,7 @@
 
 /// @Does displays usage message
 void usage(){
-    std::cout << "Usage:\nlive-wallpaper [filename]\nlive-wallpaper -[h/help]\n\nIt isn't hard." << std::endl;  
+    std::cout << "Usage:\nlive-wallpaper [filename]\nlive-wallpaper --help (-h)\n\nIt isn't hard." << std::endl;  
 }
 
 void checkReader(Reader& reader){
@@ -19,7 +19,7 @@ int main(int argc, char* argv[]){
     if (argc != 2){
         usage();
         return 1;
-    }else if (argc == 2 && (argv[1] == "-h" || argv[1] == "-help")){
+    }else if (argc == 2 && (argv[1] == "-h" || argv[1] == "--help")){
         usage();
         return 0;
     }

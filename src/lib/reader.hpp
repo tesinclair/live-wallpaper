@@ -42,12 +42,12 @@ struct videoTrack{
 };
 
 struct sampleTable{
-    char[4] codec;
+    char codec[4];
     uint16_t frameCount;
     uint32_t numEntries;
     uint32_t sampleDuration;
     uint32_t sampleCount;
-    char[12] currentChunk;
+    char currentChunk[12];
     size_t nextChunk; // location of the next Sample in the table
 };
 
@@ -55,7 +55,7 @@ class Reader{
 public: // Functions
     /// @Param fname: the name of the file to read
     ///                 - Should be .mp4
-    Reader (std::string filepath);   
+    Reader (char* filename);   
     /// @Purpose ensures the opened filestream is closed.
     ~Reader();
 
@@ -65,7 +65,7 @@ public: // Functions
 
     /// @Returns videoTrack.
     /// @Purpose reads and outputs the video data from the mp4 file
-    frame getCurrentFrame();
+    char* getCurrentFrame();
 
     /// @Returns the current state of isEOF
     bool get_isEOF();
@@ -105,11 +105,12 @@ private: // Functions
     err reverseEndian(char* bytes, uint8_t size = 4);
 
 private: // Variables
+    char* filename;
     std::filesystem::path filepath;
     std::ifstream infile;
     atom currentAtom;
     bool isEOF;
-    frame currentFrame;
-    char* codec;
+    char* currentFrame;
+    char codec[4];
     sampleTable frameData;
 };

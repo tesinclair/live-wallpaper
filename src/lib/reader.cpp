@@ -1,7 +1,7 @@
 #include "reader.hpp"
 
 //Public 
-Reader::Reader(std::string filename) : 
+Reader::Reader(char* filename) : 
             isEOF(false), readError{.err = false, .errMsg = ""}{
 
     this->filepath = std::filesystem::current_path() / filename;
@@ -125,7 +125,7 @@ void Reader::getVideoData(videoTrack& vTrack){
 }
 
 
-frame Reader::getCurrentFrame(){
+char* Reader::getCurrentFrame(){
     // uses the 
     return currentFrame;
 }
@@ -136,17 +136,6 @@ bool Reader::get_isEOF(){
 
 char* Reader::getCodec(){
     return codec;
-}
-
-uint32_t getScreenDimensions(){
-    if (!(vTrack.height || vTrack.width)){
-        readError.err = true;
-        readError.errMsg = "No height or width";
-    }
-    uint32_t dimensions = vTrack.height;
-    dimensions << 16; // shift left 16 bits
-    dimensions = dimensions | vTrack.width;
-    return dimensions;
 }
 
 // Private
