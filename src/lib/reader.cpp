@@ -5,6 +5,7 @@ Reader::Reader(char* filename) :
             isEOF(false), readError{.err = false, .errMsg = ""}{
 
     this->filepath = std::filesystem::current_path() / filename;
+<<<<<<< HEAD
     
     infile = std::ifstream(this->filepath, std::ios::binary); 
 
@@ -15,6 +16,14 @@ Reader::Reader(char* filename) :
             readError.err = true;
             readError.errMsg = "file could not be opened";
         }
+=======
+
+    infile = std::ifstream(this->filepath, std::ios::binary); 
+
+    if (!infile.is_open()){
+        readError.err = true;
+        readError.errMsg = "file could not be opened";
+>>>>>>> a8bd2e4 (fixes pull issues)
     }
 }
 
