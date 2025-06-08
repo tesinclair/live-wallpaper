@@ -6,28 +6,21 @@
 #include "lib-tests/decoder.test.h"
 #include "lib-tests/streamer.test.h"
 
+#include "utils/testing_assert.h"
+
 // OPT FLAGS
 #define SILENT 0x01
 
-#define CHECK_FLAG(libflags, flag) libflags & flag
+#define CHECK_FLAG(flags, flag) flags & flag
 
-void test_reader(int silent){
-    std::cout << "Testing Reader" << std::endl;
+void test(void* function, char* testName, int silent){
     if (silent){
-        std::cout << "Silent Activated\n\n";
+        function(silent);
+        return;
     }
-}
-void test_decoder(int silent){
-    std::cout << "Testing Decoder" << std::endl;
-    if (silent){
-        std::cout << "Silent Activated\n\n";
-    }
-}
-void test_streamer(int silent){
-    std::cout << "Testing Streamer" << std::endl;
-    if (silent){
-        std::cout << "Silent Activated\n\n";
-    }
+    std::cout << "Testing " <<  testName << std::endl;
+    function(silent);
+    std::cout << "\033[1;32m" <<  testName << " Tests Passed\033[0;37m" << std::endl;
 }
 
 void printHelp(int errCode = 1){
@@ -83,13 +76,13 @@ int main(int argc, char* argv[]){
             if (CHECK_FLAG(libflags, LIB_FLAGS[i])){
                 switch(i){
                     case 0:
-                        test_reader(CHECK_FLAG(optflags, SILENT));
+                        test(testReader, "Reader", CHECK_FLAG(optflags, SILENT));
                         break;
                     case 1:
-                        test_decoder(CHECK_FLAG(optflags, SILENT));
+                        test(testDecoder, "Streamer", CHECK_FLAG(optflags, SILENT));
                         break;
                     case 2:
-                        test_streamer(CHECK_FLAG(optflags, SILENT));
+                        test(testStreamer, "Streamer", CHECK_FLAG(optflags, SILENT));
                         break;
                 };
             }
@@ -97,9 +90,9 @@ int main(int argc, char* argv[]){
         return 0;
     }
 
-    test_reader(CHECK_FLAG(optflags, SILENT));
-    test_decoder(CHECK_FLAG(optflags, SILENT));
-    test_streamer(CHECK_FLAG(optflags, SILENT));
+    test(testReader, "Reader", CHECK_FLAG(optflags, SILENT));
+    test(testDecoder, "Decoder", CHECK_FLAG(optflags, SILENT));
+    test(testStreamer, "Streamer", CHECK_FLAG(optflags, SILENT));
  
     return 0;
 }
