@@ -9,7 +9,9 @@
 #include "utils/testing_assert.h"
 
 // OPT FLAGS
-#define SILENT 0x01
+enum optFlags{
+    SILENT = 0x01
+}
 
 #define CHECK_FLAG(flags, flag) flags & flag
 
@@ -47,7 +49,7 @@ int main(int argc, char* argv[]){
             printHelp(0);
 
         }else if (strcmp(argv[argidx], "--silent") == 0){
-            optflags |= SILENT; 
+            optflags |= optFlags.SILENT; 
 
         }else if(strcmp(argv[argidx], "--lib") == 0){
             if (argc - argidx < 2){
@@ -76,13 +78,13 @@ int main(int argc, char* argv[]){
             if (CHECK_FLAG(libflags, LIB_FLAGS[i])){
                 switch(i){
                     case 0:
-                        test(testReader, "Reader", CHECK_FLAG(optflags, SILENT));
+                        test(testReader, "Reader", CHECK_FLAG(optflags, optFlags.SILENT));
                         break;
                     case 1:
-                        test(testDecoder, "Streamer", CHECK_FLAG(optflags, SILENT));
+                        test(testDecoder, "Streamer", CHECK_FLAG(optflags, optFlags.SILENT));
                         break;
                     case 2:
-                        test(testStreamer, "Streamer", CHECK_FLAG(optflags, SILENT));
+                        test(testStreamer, "Streamer", CHECK_FLAG(optflags, optFlags.SILENT));
                         break;
                 };
             }
@@ -90,9 +92,9 @@ int main(int argc, char* argv[]){
         return 0;
     }
 
-    test(testReader, "Reader", CHECK_FLAG(optflags, SILENT));
-    test(testDecoder, "Decoder", CHECK_FLAG(optflags, SILENT));
-    test(testStreamer, "Streamer", CHECK_FLAG(optflags, SILENT));
+    test(testReader, "Reader", CHECK_FLAG(optflags, optFlags.SILENT));
+    test(testDecoder, "Decoder", CHECK_FLAG(optflags, optFlags.SILENT));
+    test(testStreamer, "Streamer", CHECK_FLAG(optflags, optFlags.SILENT));
  
     return 0;
 }
