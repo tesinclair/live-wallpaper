@@ -1,9 +1,7 @@
 #include "reader.hpp"
 
 //Public 
-Reader::Reader(char* filename) : 
-            isEOF(false), readError{.err = false, .errMsg = ""}{
-
+Reader::Reader(char* filename){
     this->filepath = std::filesystem::current_path() / filename;
     
     infile = std::ifstream(this->filepath, std::ios::binary); 
@@ -129,7 +127,7 @@ void Reader::getVideoData(videoTrack& vTrack){
 }
 
 
-char* Reader::getCurrentFrame(){
+frame Reader::getCurrentFrame(){
     // uses the 
     return currentFrame;
 }
@@ -138,7 +136,7 @@ bool Reader::get_isEOF(){
     return isEOF;
 }
 
-char* Reader::getCodec(){
+enum Codec Reader::getCodec(){
     return codec;
 }
 

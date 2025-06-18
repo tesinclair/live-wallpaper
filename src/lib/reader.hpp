@@ -13,7 +13,9 @@
 #include <iostream>
 #include <typeinfo>
 
-#include "customErr.hpp"
+#include "shared/lw_err.hpp"
+#include "shared/lw_codec.hpp"
+#include "shared/lw_types.hpp"
 
 // ATOM_EXT mean the extenstion after type
 #define ATOM_READ_LENGTH 8 
@@ -25,11 +27,6 @@ struct atom{
     unsigned long long int size64;
     char typeName[4]; // bytes pointer
 }__attribute__((packed));
-
-struct test{
-    uint32_t size;
-    uint32_t type;
-};
 
 struct videoTrack{
     uint8_t version;
@@ -61,23 +58,23 @@ public: // Functions
 
     /// @Purpose gathers the video metadata and fills the
     ///          video track data. Also validates video length
+    ///
+    /// TODO: 
+    ///     - Make this not shit 
     void getVideoData(videoTrack& vTrack);
 
     /// @Returns videoTrack.
     /// @Purpose reads and outputs the video data from the mp4 file
-    char* getCurrentFrame();
+    frame getCurrentFrame();
 
     /// @Returns the current state of isEOF
     bool get_isEOF();
 
     /// @Returns the code used
-    char* getCodec();
-
-    /// @Returns uint32_t containing height:width, uint16_t:uint16_t
-    uint32_t getScreenDimensions();
+    enum Codec getCodec();
 
 public: // Variables
-    err readError;
+    err readError = {.err = false, .errMsg = ""};
 
 private: // Functions
     /// @Purpose closes the ifstream safely
@@ -104,13 +101,15 @@ private: // Functions
     ///       to the front. 
     err reverseEndian(char* bytes, uint8_t size = 4);
 
+    enum Codec getCodec();
+
 private: // Variables
     char* filename;
     std::filesystem::path filepath;
     std::ifstream infile;
     atom currentAtom;
-    bool isEOF;
-    char* currentFrame;
-    char codec[4];
+    bool isEOF = false;
+    frame currentFrame;
+    enum Codec encoding;
     sampleTable frameData;
 };
