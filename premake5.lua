@@ -7,7 +7,11 @@ project "live-wallpaper"
     language "C++"
     targetdir "bin/%{cfg.buidcfg}"
 
-    files { "src/main.cpp", "src/lib/reader.cpp", "src/lib/reader.h", "src/lib/customErr.h" }
+    includedirs {
+        "third_party/**"
+    }
+
+    files { "src/**"" }
 
     filter "configurations:Debug"
         defines { "DEBUG" }
