@@ -1,7 +1,7 @@
 #include <iostream>
-//#include "lib/backgroundstreamer.hpp"
+#include "lib/backgroundstreamer.hpp"
 #include "lib/reader.hpp"
-//#include "lib/decoder.hpp"
+#include "lib/decoder.hpp"
 
 /// @Does displays usage message
 void usage(){
