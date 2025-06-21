@@ -8,7 +8,7 @@ project "live-wallpaper"
     targetdir "bin/%{cfg.buidcfg}"
 
     includedirs {
-        "third_party/**"
+        "third_party/*"
     }
 
     files { "src/**"" }
