@@ -187,10 +187,19 @@ err startup(){
 
 // Any argparse issues usage is printed.
 void argParse(int argc, char* argv[]){
-    
+    if (argc < 2){
+        printUsage();
+        exit(1);
+    }
+
+    if (argv[1] == "--destroy"){
+        destroy = true;
+    }
 }
 
 int main(int argc, char* argv[]){
+    argParse(argc, argv);
+
     err startupError = startup();
     test(startupError);
 
@@ -212,11 +221,6 @@ int main(int argc, char* argv[]){
     Reader reader(filepath);
     test(reader.readerError);
     LOG_INFO("Main:main", "Reader object created successfully.");
-
-    LOG_INFO("Main:main", "Creating the Decoder object.");
-    Decoder decoder;
-    test(decoder.decoderError);
-    LOG_INFO("Main:main", "Decoder object created successfully.");
 
     LOG_INFO("Main:main", "Creating the Streamer object.");
     Streamer streamer;
@@ -240,26 +244,26 @@ int main(int argc, char* argv[]){
         size_t j = 1;
 #endif
 
+        LOG_INFO("Main:main-loop", "Getting the first packet...");
+        AVPacket* ptk = reader.getNextPacket();
+        test(reader.readerError);
+        LOG_INFO("Main:main-loop", "Got first packet.");
+
         LOG_INFO("Main:main-loop", "Entering the frame streaming loop.");
-         
-        while (!reader.isEOF()){
+
+        while (!reader.get_isEOF()){
 #if defined(DEBUG) || defined(VERBOSE)
             LOG_INFO("Main:main-floop", "Current Iteration: %ld", j);
 #endif
-            LOG_INFO("Main:main-floop", "Getting the next encoded frame.");
-            frame frame = reader.getNextFrame();
-            test(reader.readerError);
-            LOG_INFO("Main:main-floop", "Successfully retrieved the next encoded frame.");
-
-            LOG_INFO("Main:main-floop", "Decoding the encoded frame."); 
-            decoder.decodeFrame(&frame);
-            test(decoder.decoderError);
-            LOG_INFO("Main:main-floop", "Successfully decoded the frame.");
-
             LOG_INFO("Main:main-floop", "Streaming decoded frame to background.");
-            streamer.stream(&frame);
+            streamer.stream(&pkt);
             test(streamer.streamerError);
             LOG_INFO("Main:main-floop", "Successfully streamed the frame.");
+
+            LOG_INFO("Main:main-floop", "Getting the next frame.");
+            AVPacket* ptk = reader.getNextPacket();
+            test(reader.readerError);
+            LOG_INFO("Main:main-floop", "Successfully retrieved the next frame.");
 
 #if defined(DEBUG) || defined(VERBOSE)
             LOG_INFO("Main:main-floop", "Finishing Iteration: %ld", j);

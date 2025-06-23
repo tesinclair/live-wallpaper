@@ -12,3 +12,5 @@ tmp/
 
 # any testing mp4s I use
 *.mp4
+
+Doxyfile

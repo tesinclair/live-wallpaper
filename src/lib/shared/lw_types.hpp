@@ -1,4 +1,4 @@
 #pragma once
 
-typedef char* frame;
+// Nothing here yet...
 
