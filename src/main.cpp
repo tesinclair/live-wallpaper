@@ -1,5 +1,4 @@
 /**
-    
     @Notes:
         - excessive logging: Most of the logging will be removed when the first release is ready. This is to avoid bugs.
 
