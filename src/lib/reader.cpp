@@ -86,7 +86,7 @@ AVPacket* Reader::getNextPacket(){
         LOG_INFO("Reader:getNextPacket", "Got the next packet");
 
         LOG_INFO("Reader:getNextPacket", "Checking if packet is video stream");
-        if (m_pkt->stream_index == m_decoder.videoStreamIdx){
+        if (m_pkt->stream_index == m_decoder.get_videoStreamIdx){
             m_frameIsVFrame = true;
             LOG_INFO("Reader:getNextPacket", "Packet was a video stream. Decoding...");
             m_decoder.decode(m_pkt);
