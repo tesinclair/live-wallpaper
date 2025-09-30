@@ -2,6 +2,7 @@ package services
 
 import (
 	"net"
+	"bufio"
 	"github.com/tesinclair/live-wallpaper/util"
 	x11 "github.com/tesinclair/live-wallpaper/xgb"
 	"github.org/x/sync/errgroup"
@@ -91,7 +92,7 @@ func (s *TCPServer) Serve(errCh chan SState, killed chan bool){
 		}
 
 		if g.TryGo(func() error{
-			handleClient(conn, alive, xConn) 
+			handleClient(conn, alive) 
 		})
 	}
 }
@@ -101,16 +102,51 @@ func (s *UDPServer) Serve(errCh chan error, killed chan bool){
 	close(ch)
 }
 
-func handleClient(c net.Conn, alive chan bool, x x11.Conn){
+func handleClient(c net.Conn, alive chan bool){
+	xConn, err := x11.Open()
+	if err != nil{
+		c.Close()
+		return
+	}
+	defer xConn.Close()
+	defer c.Close()
+
+	screenWidth, screenHeight := c.GetScreenSize()
+
+	if _, err := c.Write([]byte(fmt.Sprintf("%v:%v\0", screenWidth, screenHeight))); err != nil{
+		return
+	}
+	r := bufio.NewReader(c)
+	widthC, heightC := strings.Split(string(r.ReadBytes('0xD8')), ":"))
+	width, err1 := uint(strconv.ParseInt(widthC))
+	height, err2 := uint(strconv.ParseInt(heightC))
+	if err1 != nil || err2 != nil{
+		return
+	}
+
+	frame := 0
 	for{
-		select{
-		case _, ok := <- alive; !ok:
-			c.Close()
-			return
-		default:
+		frame %= 30 // check every 30 frames
+		if frame == 0{
+			select{
+			case _, ok := <- alive; !ok:
+				return
+			default:
+			}
 		}
+		// TODO: check when the stream ends
+		// cos this shouldn't be every frame
+		r.ReadBytes('0xD8')
+		frame := r.ReadBytes('0xFF')
+		
+		// for now always do 3 channels
+		xFrame, err := x11.CreateXFrame(frame, width, height, 3)
+		if err != nil{
+			return
+		}
+		if err := conn.Send(xFrame); err != nil{
+			return
+		}
+		frame++
 	}
 }
-
-
-

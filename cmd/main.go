@@ -19,7 +19,7 @@ import (
 	"net"
 	"time"
 	"github.com/akamensky/argparse"
-	services "github.com/tesinclair/live-wallpaper/internal"
+	"github.com/tesinclair/live-wallpaper/services"
 )
 
 var (
@@ -32,7 +32,6 @@ var (
 var (
 	tmpPath = os.TempDir() + "/live_wallpaper_tmp"
 )
-
 
 /*
 TODO:
@@ -77,20 +76,16 @@ func main(){
 		Help: "The delay between probes.",
 		Default: 100,
 	})
-
 	if len(os.Args) < 2{
 		fmt.Print(argparser.Usage(nil))
 		os.Exit(1)
 	}
-
 	if err := setAlive(); err != nil{
 		panic("Failed to wake up.")
 	}
-
 	if os.Args[1] == "--kill"{
 		os.Exit(0) // setAlive() will kill all other instances	
 	}
-
 	if err := argparser.Parse(os.Args); err != nil{
 		fmt.Print(argparser.Usage(err))
 		os.Exit(1)
@@ -117,8 +112,9 @@ func main(){
 	if e := <-err != nil{
 		log.Fatalln("Failed to prepare server: ", ready.err)
 	}
-
 	fmt.Println("Server started successfully.")
+
+	decoder := services.CreateDecoder(fname, addr)
 
 	for{
 		if p.shouldClose{
@@ -180,7 +176,6 @@ func setAlive() error{
 			}
 			time.Sleep(*Delay)
 		}
-
 	}
 }
 

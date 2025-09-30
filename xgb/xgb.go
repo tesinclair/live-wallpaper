@@ -104,7 +104,6 @@ func (c *X11Conn) Send(frame *C.XFrame) error{
 	if frame.len < 1 || frame.len != frame.width * frame.height * frame.channels{
 		return util.InvalidParam
 	}
-
 	if C.send_frame(frame) != 0{
 		return util.CCasllFailed
 	}
@@ -112,18 +111,21 @@ func (c *X11Conn) Send(frame *C.XFrame) error{
 
 /*
 Creates an Xframe from the given byte stream.
-Does not error, does not guarentee valid frame.
 
 NOTE:
 	A valid frame must have the same amount of data
 	as width*height*channels
 */
-func CreateXFrame(data []bytes, width, height, channels uint) *XFrame{
+func CreateXFrame(data []bytes, width, height, channels uint) (*XFrame, error){
 	cData := (*C.uchar)(unsafe.Pointer(&data[0]))
 	cWidth := C.unsigned_int(width)
 	cHeight := C.unsigned_int(height)
 	cChannels := C.unsigned_int(channels)
 	cLen := C.unsigned_int(len(data))
+
+	if len(data) != width * height * channels{
+		return util.InvalidFrame
+	}
 	
 	return &C.XFrame{
 		data: cData,
