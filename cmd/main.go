@@ -20,6 +20,7 @@ import (
 	"time"
 	"github.com/akamensky/argparse"
 	"github.com/tesinclair/live-wallpaper/services"
+	x11 "github.com/tesinclair/live-wallpaper/xgb"
 )
 
 var (
@@ -115,8 +116,15 @@ func main(){
 	fmt.Println("Server started successfully.")
 
 	decoder := services.CreateDecoder(fname, addr)
+	// TODO(tesinclair): implement this in xgb
+	sWidth, sHeight, err := x11.GetDefaultScreenSize()
+	if err != nil{
+		log.Fatalln("Failed to get screen size: ", err)
+	}
+	decoder.SetScreenDimensions(sWidth, sHeight)
 
 	for{
+		// TODO(tesinclair): This needs to be reconsidered...
 		if p.shouldClose{
 			kill <- true // send to server to kill client
 			for {
