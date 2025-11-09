@@ -27,7 +27,7 @@ and return util.CCallFailed.
 */
 import "C"
 
-import(
+import (
 	"unsafe"
 )
 
@@ -35,7 +35,7 @@ import(
 The Frame type is the main type used
 to send data to x11.
 
-Each frame should be built using 
+Each frame should be built using
 CreateXFrame(...)
 */
 // XFrame is now only defined in xgb/xgb.h
@@ -45,22 +45,22 @@ None of the members of this struct are accessable
 
 Exactly mirrors its C sister
 */
-type X11Conn struct{
+type X11Conn struct {
 	display *C.Display
-	screen *C.Screen
-	ximg *C.XImage
-	visual *C.Visual
-	depth C.unsigned_int
-	gCtx C.GC
+	screen  *C.Screen
+	ximg    *C.XImage
+	visual  *C.Visual
+	depth   C.unsigned_int
+	gCtx    C.GC
 }
 
 /*
 Creates a connection to X11
 and all of the Xlib params
 */
-func Open() (*X11Conn, error){
+func Open() (*X11Conn, error) {
 	c := new(X11Conn)
-	if C.setup_x11((*C.X11Conn)(unsafe.Pointer(c))) != 0{
+	if C.setup_x11((*C.X11Conn)(unsafe.Pointer(c))) != 0 {
 		return nil, util.CCallFailed
 	}
 
@@ -75,8 +75,8 @@ Should always match calls to Open().
 
 Panics if teardown_x11 fails.
 */
-func (c *X11Conn) Close(){
-	if C.teardown_x11((*C.X11.Conn)(unsafe.Pointer(c))) != 0{
+func (c *X11Conn) Close() {
+	if C.teardown_x11((*C.X11.Conn)(unsafe.Pointer(c))) != 0 {
 		panic("Call to C-teardown_x11 failed. Please check logs!")
 	}
 }
@@ -88,7 +88,7 @@ default screen.
 
 returns in order width, height.
 */
-func (c *X11Conn) GetScreenSize() (width uint, height uint){
+func (c *X11Conn) GetScreenSize() (width uint, height uint) {
 	width := uint(C.get_screen_width(c.screen))
 	height := uint(C.get_screen_height(c.screen))
 }
@@ -100,11 +100,11 @@ of X11Conn
 If the frame is invalid a util.InvalidParam will
 be returned. It is the callers job to check why.
 */
-func (c *X11Conn) Send(frame *C.XFrame) error{
-	if frame.len < 1 || frame.len != frame.width * frame.height * frame.channels{
+func (c *X11Conn) Send(frame *C.XFrame) error {
+	if frame.len < 1 || frame.len != frame.width*frame.height*frame.channels {
 		return util.InvalidParam
 	}
-	if C.send_frame(frame) != 0{
+	if C.send_frame(frame) != 0 {
 		return util.CCasllFailed
 	}
 }
@@ -113,26 +113,26 @@ func (c *X11Conn) Send(frame *C.XFrame) error{
 Creates an Xframe from the given byte stream.
 
 NOTE:
+
 	A valid frame must have the same amount of data
 	as width*height*channels
 */
-func CreateXFrame(data []bytes, width, height, channels uint) (*XFrame, error){
+func CreateXFrame(data []bytes, width, height, channels uint) (*XFrame, error) {
 	cData := (*C.uchar)(unsafe.Pointer(&data[0]))
 	cWidth := C.unsigned_int(width)
 	cHeight := C.unsigned_int(height)
 	cChannels := C.unsigned_int(channels)
 	cLen := C.unsigned_int(len(data))
 
-	if len(data) != width * height * channels{
+	if len(data) != width*height*channels {
 		return util.InvalidFrame
 	}
-	
+
 	return &C.XFrame{
-		data: cData,
-		width: xWidth,
-		height: cHeight,
+		data:     cData,
+		width:    xWidth,
+		height:   cHeight,
 		channels: cChannels,
-		len: cLen,
+		len:      cLen,
 	}
 }
-
