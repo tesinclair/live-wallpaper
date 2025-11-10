@@ -12,7 +12,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/akamensky/argparse"
 	"github.com/tesinclair/live-wallpaper/services"
 	x11 "github.com/tesinclair/live-wallpaper/xgb"
 	"net"
@@ -23,78 +22,44 @@ import (
 )
 
 var (
-	Host     *string
-	Port     *int
-	Protocol *string
-	Delay    *int
+	Host     string = "127.0.0.1"
+	Port     int = 31893
+	Protocol string = "tcp"
+	Delay    int = 100
+	Filename string = ""
+
+	IsDaemon bool = false
 )
 
 var (
 	tmpPath = os.TempDir() + "/live_wallpaper_tmp"
 )
 
-/*
-TODO:
-	- Add flags:
-		- Port, Host, protocol, Delay
-		- BG fit options
-		- FPS
-*/
-
-type prog struct {
-	mu   sync.Mutex
-	kill bool
-}
+const (
+)
 
 func main() {
-	p := new(prog)
 	sigCh := make(chan os.Signal)
 	killedCh := make(chan bool)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-	go p.cleanupWatcher(sigCh, killedCh)
-
-	argparser := argparse.NewParser("", "A modern and maintained live wallpaper for ubuntu-i3.")
-	fname := argparse.File("i", "input", os.O_RDONLY, 0, &argparse.Options{
-		Required: true,
-		Help:     "The mp4 input file to stream.",
-	})
-	Host = argparser.String("", "host", &argparse.Options{
-		Help:    "The hostname to run the streamer on. Not validated.",
-		Default: "127.0.0.1",
-	})
-	Port = argparser.Int("", "port", &argparse.Options{
-		Help:    "A port for the streamer to use.",
-		Default: 31893,
-	})
-	Protocol = argparser.Selector("", "protocol", []string{"tcp", "udp"}, &argparse.Options{
-		Help:    "The protocol to run the streamer over.",
-		Default: "tcp",
-	})
-	Delay = argparser.Int("d", "delay", &argparse.Options{
-		Help:    "The delay between probes.",
-		Default: 100,
-	})
-	if len(os.Args) < 2 {
-		fmt.Print(argparser.Usage(nil))
-		os.Exit(1)
-	}
-	if err := setAlive(); err != nil {
-		panic("Failed to wake up.")
-	}
-	if os.Args[1] == "--kill" {
-		os.Exit(0) // setAlive() will kill all other instances
-	}
-	if err := argparser.Parse(os.Args); err != nil {
-		fmt.Print(argparser.Usage(err))
-		os.Exit(1)
+	if os.Getend("DAEMON") != ""{
+		IsDaemon = true
 	}
 
-	addr := fmt.Sprintf("%v://%v:%v", *Protocol, *Host, *Port)
+	// The daemon does not take cla
+	if !IsDaemon{
+		argparse(os.Args);
+	}
 
+	prot, addr := parseConfig()
+
+
+	// TODO(tesinclair): add this to a log file or journalctl or smth
 	fmt.Println("Starting instance of live-wallpaper.")
 	fmt.Println("Starting server: ", addr)
 
+	/*
+	addr := fmt.Sprintf("%v://%v:%v", Protocol, Host, Port)
 	prot := services.TCP
 	switch Protocol {
 	case "tcp":
@@ -102,48 +67,52 @@ func main() {
 	case "udp":
 		prot = services.UDP
 	}
-	server := services.CreateServer(*Host, addr, *Port, prot)
+	*/
 
-	err := make(chan error)
+	// receiving channels
+	start := make(chan bool)
 	kill := make(chan bool)
-	go server.Serve(err, kill)
+	input := make(chan string)
 
-	if <-err != nil {
-		log.Fatalln("Failed to prepare server: ", ready.err)
-	}
-	fmt.Println("Server started successfully.")
+	// sending channel
+	err := make(chan error)
 
-	decoder := services.CreateDecoder(fname, addr)
-	// TODO(tesinclair): implement this in xgb
-	sWidth, sHeight, err := x11.GetDefaultScreenSize()
-	if err != nil {
-		log.Fatalln("Failed to get screen size: ", err)
-	}
-	decoder.SetScreenDimensions(sWidth, sHeight)
+	go listenDaemon(start, kill, input, err)
 
-	for {
-		// TODO(tesinclair): This needs to be reconsidered...
-		if p.shouldClose {
-			kill <- true // send to server to kill client
-			for {
-				ln, err := net.Listen(server.prot, addr)
+	kill_server := make(chan bool)
+
+	for{
+		select{
+		case <-start == true:
+			server := services.CreateServer(Host, addr, Port, prot)
+			go server.Serve(err, kill_server)
+
+		case <-kill == true:
+			kill_server <-true
+
+		case in := <-input:
+			/*
+			if testServer()
+			if input != ""
+				create and stream decoder
+				
+				decoder := services.CreateDecoder(fname, addr)
+				// TODO(tesinclair): implement this in xgb
+				sWidth, sHeight, err := x11.GetDefaultScreenSize()
 				if err != nil {
-					time.Sleep(*Delay)
-					continue
+					log.Fatalln("Failed to get screen size: ", err)
 				}
-				ln.Close()
-				killedCh <- true
-				goto ret
-			}
+				decoder.SetScreenDimensions(sWidth, sHeight)
+				
+
+			else
+				send a no server error
+			*/
 		}
-		time.Sleep(*Delay)
 	}
-ret:
-	fmt.Println("Server shut down successfully. Exiting.")
-	return 0
 }
 
-func setAlive() error {
+func setupDaemon() error {
 	for {
 		if _, err := os.Stat(tmpPath); errors.Is(err, os.ErrNotExist) {
 			f, err := os.OpenFile(tmpPath, os.O_CREATE|os.O_RDWR, 0600)
@@ -185,16 +154,82 @@ func setAlive() error {
 	}
 }
 
-func (p *prog) cleanupWatcher(sig chan os.signal, ready chan bool) {
-	<-sig
-	fmt.Println("Received kill command. Shutting down...")
-	p.mu.Lock()
-	p.kill = true
-	p.mu.Unlock()
-	for {
-		if <-ready == true {
-			os.Remove(tmpPath)
-			break
-		}
+func argparse(args []string){
+	if len(args) < 2{
+		printHelp()
+		panic("Not enough arguments")
 	}
+
+	if args[1] == "--start"{
+		// TODO(tesinclair): start up the daemon
+		os.Exit(0)
+	}
+
+	if args[1] == "--restart"{
+		// TODO(tesinclair): send a signal to dbus asking the service to die
+		// 					 starts up a new daemon.
+	}
+
+	if args[1] == "--reload"{
+		// TODO(tesinclair): send a signal to dbus asking the service to reload
+		os.Exit(0)
+	}
+
+	if args[1] == "--kill"{
+		// TODO(tesinclair): send signal to dbus telling the service to die
+		os.Exit(0)
+	}
+
+	if args[1] == "--config-gen"{
+		// TODO(tesinclair): generate a config file in ~/.config/live-wallpaper/config.ini
+		
+		/*
+		"The hostname to run the streamer on. Not validated."
+		Host = "127.0.0.1"
+
+		"A port for the streamer to use."
+		Port = 31893
+
+		"The protocol to run the streamer over."
+		Protocol = "tcp"
+
+	 	"The delay between probes."
+		Delay = 100
+		*/
+		os.Exit(0)
+	}
+
+	if args[1] == "--input"{
+		if len(args) < 3{
+			printHelp()
+			panic("Not enough arguments.")
+		}
+		//TODO(tesinclair): send a message to dbus {"open": args[2]}
+	}
+	
+}
+
+func printHelp(){
+	fmt.Printf(`
+	Usage: %v COMMAND
+
+	Commands:
+		--start [OPTIONS]: Starts the live-wallpaper daemon; nothing if already alive.
+		--reload [OPTIONS]: reloads the configuration file.
+		--restart [OPTIONS]: Kills the living daemon and starts another.
+		--kill: Kills the living daemon; nothing if no daemon is alive.
+		--input filename: Sends the given file to the daemon to display.
+
+		--config-gen: generate a blank config file in ~/.config/live-wallpaper/config.ini
+
+	Options:
+		--config: The location of the config file [NOT IMPLEMENTED YET]
+
+	Config:
+		The config file is optional as the default values work well for any normal person.
+		The daemon searches ~/.config/live-wallpaper/config.ini.
+		The config file can be automatically generated with the --config-gen flag.
+
+	`, os.Args[0])
+	os.Exit(0)
 }
